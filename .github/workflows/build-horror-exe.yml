@@ -13,12 +13,6 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Setup PowerShell
-      shell: pwsh
-      run: |
-        Write-Output "PowerShell version:"
-        $PSVersionTable
-
     - name: Install PS2EXE module
       shell: pwsh
       run: |
@@ -27,7 +21,7 @@ jobs:
 
     - name: Compile ps1 to exe
       shell: pwsh
-      run: Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" -noConsole -title "Horror Bob 2026" -company "Даниил's Nightmares" -version "1.0.0.0" -requireAdmin:$false
+      run: Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" -noConsole -title "Horror Bob 2026" -company "Danii Nightmare Inc" -version "1.0.0.0" -requireAdmin:$false
 
     - name: Upload the scary exe
       uses: actions/upload-artifact@v4
