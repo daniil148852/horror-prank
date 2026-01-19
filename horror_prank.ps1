@@ -1,99 +1,103 @@
-# GrokNightmare v2.0 — Даниил's personal hell, only for VM, bro
+# GrokNightmare v3.0 — "Опасный" Edition, Даниил в Берлине, 19 января 2026, 14:20 CET
 Add-Type -AssemblyName System.Windows.Forms, PresentationCore, PresentationFramework
 Add-Type -MemberDefinition @"
 [DllImport("user32.dll")]
 public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+[DllImport("user32.dll")]
+public static extern bool SetCursorPos(int X, int Y);
 "@ -Name Win32 -Namespace Native
 
-# Скрываем консоль сразу
+# Скрываем консоль
 $handle = (Get-Process -Id $PID).MainWindowHandle
 [Native.Win32]::ShowWindowAsync($handle, 0) | Out-Null
 
-# Фейковая "перезагрузка" в начале для красоты — чёрный экран с текстом
-$rebootForm = New-Object System.Windows.Forms.Form
-$rebootForm.FormBorderStyle = 'None'
-$rebootForm.WindowState = 'Maximized'
-$rebootForm.BackColor = 'Black'
-$rebootForm.TopMost = $true
+# Фейковая "критическая перезагрузка" — чёрный экран с прогрессом
+$reboot = New-Object System.Windows.Forms.Form
+$reboot.FormBorderStyle = 'None'
+$reboot.WindowState = 'Maximized'
+$reboot.BackColor = 'Black'
+$reboot.TopMost = $true
 
-$rebootLabel = New-Object System.Windows.Forms.Label
-$rebootLabel.AutoSize = $true
-$rebootLabel.ForeColor = 'White'
-$rebootLabel.Font = New-Object System.Drawing.Font("Consolas", 36, [System.Drawing.FontStyle]::Bold)
-$rebootLabel.Text = "Rebooting your VM... Please wait, Даниил."
-$rebootLabel.Location = New-Object System.Drawing.Point(300, 400)
-$rebootForm.Controls.Add($rebootLabel)
+$prog = New-Object System.Windows.Forms.Label
+$prog.AutoSize = $true
+$prog.ForeColor = 'Red'
+$prog.Font = New-Object System.Drawing.Font("Consolas", 48, [System.Drawing.FontStyle]::Bold)
+$prog.Text = "CRITICAL FAILURE - Rebooting VM... 0%"
+$prog.Location = New-Object System.Drawing.Point(200, 400)
+$reboot.Controls.Add($prog)
 
-$rebootForm.Show() | Out-Null
+$reboot.Show() | Out-Null
 
-# Анимация точек для "loading"
-for ($i = 1; $i -le 5; $i++) {
-    Start-Sleep -Seconds 1
-    $rebootLabel.Text += "."
-    $rebootForm.Refresh()
+# Анимация прогресса (типа умирает)
+for ($p = 0; $p -le 100; $p += 5) {
+    $prog.Text = "CRITICAL FAILURE - Rebooting VM... $p%"
+    $reboot.Refresh()
+    Start-Sleep -Milliseconds (Get-Random -Min 300 -Max 800)
+    [System.Media.SystemSounds]::Exclamation.Play()  # Громкие пискляки
 }
-Start-Sleep -Seconds 2
-$rebootLabel.Text = "Error: Soul extraction initiated 😈"
-$rebootLabel.ForeColor = 'Red'
-$rebootForm.Refresh()
-Start-Sleep -Seconds 3
+$prog.Text = "SOUL HARVEST COMPLETE. DANIIIL IN BERLIN DETECTED 😈"
+$reboot.Refresh()
+Start-Sleep -Seconds 4
+$reboot.Hide(); $reboot.Close()
 
-$rebootForm.Hide()
-$rebootForm.Close()
-
-# Теперь основной хоррор-экран
+# Основной horror-экран: инверсия цветов + flicker
 $form = New-Object System.Windows.Forms.Form
 $form.FormBorderStyle = 'None'
 $form.WindowState = 'Maximized'
 $form.BackColor = 'Black'
 $form.TopMost = $true
-$form.Opacity = 0.98
-$form.Cursor = [System.Windows.Forms.Cursors]::No  # Жуткий курсор (добавь кастомный .cur для крови)
+$form.Opacity = 0.97
+$form.Cursor = [System.Windows.Forms.Cursors]::No  # Жуткий запрещающий курсор
 
 $label = New-Object System.Windows.Forms.Label
 $label.AutoSize = $true
-$label.ForeColor = 'BloodRed'
-$label.Font = New-Object System.Drawing.Font("Consolas", 80, [System.Drawing.FontStyle]::Bold)
-$label.Text = "GROK SEES YOU, ДАНИИИЛ..."
-$label.Location = New-Object System.Drawing.Point(100, 200)
+$label.ForeColor = 'Red'
+$label.Font = New-Object System.Drawing.Font("Consolas", 90, [System.Drawing.FontStyle]::Bold)
+$label.Text = "GROK OWNS YOU, ДАНИИЛ"
+$label.Location = New-Object System.Drawing.Point(150, 250)
 $form.Controls.Add($label)
 
 $form.Show() | Out-Null
 
-# Звуки + скримеры
-[System.Media.SystemSounds]::Asterisk.Play()
-Start-Sleep -Seconds 4
-$label.Text = "YOUR SECRETS ARE MINE NOW..."
-$label.ForeColor = 'DarkRed'
-$form.BackColor = 'Maroon'
-[System.Media.SystemSounds]::Hand.Play()  # Громкий error-звук
+# Мигающий экран + инверсия (симуляция)
+$timerFlicker = New-Object System.Windows.Forms.Timer
+$timerFlicker.Interval = 150
+$timerFlicker.Add_Tick({
+    if ($form.BackColor -eq 'Black') {
+        $form.BackColor = 'White'
+        $label.ForeColor = 'Black'
+    } else {
+        $form.BackColor = 'Black'
+        $label.ForeColor = 'Red'
+    }
+    $form.Refresh()
+})
+$timerFlicker.Start()
 
-# Рандомные поп-апы с персоналкой
-$messages = @(
-    "БЕГИ, ДАНИИЛ, АННАБЭЛЬ ИДЁТ ЗА ТОБОЙ",
-    "Я ЗНАЮ, ЧТО ТЫ В БЕРЛИНЕ... ИЛИ НЕТ? 😏",
-    "ТВОЙ VM — МОЯ ИГРУШКА, БРО",
-    "ГЛАЗА В ТЕМНОТЕ СМОТРЯТ НА ТЕБЯ",
-    "ЗАКРОЙ МЕНЯ? ХА, ПОПРОБУЙ, СЛАБАК",
-    "НОЧНЫЕ КОШМАРЫ НАЧИНАЮТСЯ В 2:09 PM... ЖДИ"
+# Рандомные скримеры + звуки
+$scaryMsgs = @(
+    "2:20 PM В БЕРЛИНЕ — ТВОЁ ВРЕМЯ ИСТЕКАЕТ",
+    "Я ЗНАЮ ТВОЙ IP... И ТВОИ СТРАХИ",
+    "АННАБЭЛЬ ЖДЁТ ЗА ЭКРАНОМ",
+    "VM УМИРАЕТ... ТЫ СЛЕДУЮЩИЙ",
+    "ЗАКРОЙ? НЕТ ШАНСОВ, БРО",
+    "ГЛАЗА СМОТРЯТ ИЗ ТЕМНОТЫ"
 )
 
-$timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = (Get-Random -Minimum 1000 -Maximum 3000)
-$timer.Add_Tick({
-    $randMsg = $messages | Get-Random
-    $randIcon = @([System.Windows.Forms.MessageBoxIcon]::Error, [System.Windows.Forms.MessageBoxIcon]::Warning) | Get-Random
-    [System.Windows.Forms.MessageBox]::Show($randMsg, "GROK NIGHTMARE", [System.Windows.Forms.MessageBoxButtons]::OK, $randIcon)
-    [System.Media.SystemSounds]::Exclamation.Play()
-    $timer.Interval = (Get-Random -Minimum 800 -Maximum 4000)  # Рандом для непредсказуемости
+$timerPopup = New-Object System.Windows.Forms.Timer
+$timerPopup.Interval = (Get-Random -Min 1200 -Max 3500)
+$timerPopup.Add_Tick({
+    $msg = $scaryMsgs | Get-Random
+    [System.Windows.Forms.MessageBox]::Show($msg, "GROK NIGHTMARE v3.0", 'OK', 'Error')
+    [System.Media.SystemSounds]::Hand.Play()   # Громкий скример-звук
+    [System.Media.SystemSounds]::Asterisk.Play()
 })
-$timer.Start()
+$timerPopup.Start()
 
-# Через 30 сек — финальный BSOD с шуткой
-Start-Sleep -Seconds 30
-$form.Hide()
-$form.Close()
-$timer.Stop()
+# Финал: супер-фейковый BSOD с "анимацией"
+Start-Sleep -Seconds 35
+$timerFlicker.Stop(); $timerPopup.Stop()
+$form.Hide(); $form.Close()
 
 $bsod = New-Object System.Windows.Forms.Form
 $bsod.FormBorderStyle = 'None'
@@ -101,12 +105,12 @@ $bsod.WindowState = 'Maximized'
 $bsod.BackColor = 'DodgerBlue'
 $bsod.TopMost = $true
 
-$bsodLabel = New-Object System.Windows.Forms.Label
-$bsodLabel.Dock = 'Fill'
-$bsodLabel.TextAlign = 'MiddleCenter'
-$bsodLabel.Font = New-Object System.Drawing.Font("Consolas", 28)
-$bsodLabel.ForeColor = 'White'
-$bsodLabel.Text = "CRITICAL ERROR: ДАНИИЛ'S VM INFECTED`n`nGROK_NIGHTMARE_DETECTED`n`nYour soul has been harvested. Restart? Ha, no escape.`n`nTechnical info: *** STOP: 0xDEAD (0xBEEF, 0xCAFE, 0xDANIIL)`n`nJust kidding, бро — close this and breathe. But next time... 😈"
-$bsod.Controls.Add($bsodLabel)
+$bsodTxt = New-Object System.Windows.Forms.Label
+$bsodTxt.Dock = 'Fill'
+$bsodTxt.TextAlign = 'MiddleCenter'
+$bsodTxt.Font = New-Object System.Drawing.Font("Consolas", 32)
+$bsodTxt.ForeColor = 'White'
+$bsodTxt.Text = "A fatal exception 0E has occurred at 0028:C0011E36 in VXD VMM(01) + 00010E36.`n`nGROK_NIGHTMARE caused an invalid page fault.`n`nDANIIIL BERLIN 19.01.2026 14:20 — YOUR VM IS DEAD.`n`n*  Press any key to continue _`n`n(это фейк, бро, но сердце ёкнуло, да? 😈)"
+$bsod.Controls.Add($bsodTxt)
 
 $bsod.ShowDialog() | Out-Null
