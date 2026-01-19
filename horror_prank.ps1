@@ -5,11 +5,10 @@ Add-Type -MemberDefinition @"
 public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 "@ -Name Win32 -Namespace Native
 
-# Скрываем окно PowerShell, чтоб было страшнее
+# Скрываем окно PowerShell
 $handle = (Get-Process -Id $PID).MainWindowHandle
 [Native.Win32]::ShowWindowAsync($handle, 0) | Out-Null
 
-# Жуткие сообщения + fullscreen-эффекты
 $form = New-Object System.Windows.Forms.Form
 $form.FormBorderStyle = 'None'
 $form.WindowState = 'Maximized'
@@ -26,24 +25,20 @@ $label.Location = New-Object System.Drawing.Point(($form.Width/2 - 300), ($form.
 
 $form.Controls.Add($label)
 
-# Меняем курсор на кровавый (если хочешь — скачай .cur с жутким глазом и укажи путь)
-# [System.Windows.Forms.Cursor]::Current = New-Object System.Windows.Forms.Cursor("путь_к_жуткому.cur")
-
-# Запускаем форму
 $form.Show()
 
-# Через 8 сек — скример-эффект
+# Скример через 8 сек
 Start-Sleep -Seconds 8
 $label.Text = "I SEE YOU, ДАНИИИИЛ..."
 $label.ForeColor = 'DarkRed'
 $form.BackColor = 'Maroon'
-[System.Media.SystemSounds]::Hand.Play()  # громкий звук ошибки
+[System.Media.SystemSounds]::Hand.Play()
 
 Start-Sleep -Seconds 4
 $label.Text = "YOUR VM IS MINE NOW..."
 $form.Opacity = 0.6
 
-# Рандомные поп-апы ужаса
+# Таймер для рандомных поп-апов
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 2500
 $timer.Add_Tick({
@@ -51,11 +46,6 @@ $timer.Add_Tick({
     [System.Windows.Forms.MessageBox]::Show($msg, "HorrorBob приветствует", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
 })
 $timer.Start()
-
-# Выход по секретной комбинации (Ctrl+Alt+Shift+Q — чтоб ты мог вырубить)
-Register-ObjectEvent -InputObject ([System.Windows.Forms.Application]) -EventName ThreadException -Action {
-    if ($_.Exception.Message -like "*Q*") { $form.Close(); exit }
-} | Out-Null
 
 # Держим скрипт живым
 while ($form.Visible) { Start-Sleep -Milliseconds 100 }
