@@ -3,7 +3,7 @@ name: Build Horror Prank EXE
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # можно запускать вручную из интерфейса
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,18 +22,12 @@ jobs:
     - name: Install PS2EXE module
       shell: pwsh
       run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        Install-Module -Name PS2EXE -Scope CurrentUser -Force -AllowClobber
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+        Install-Module -Name PS2EXE -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
 
     - name: Compile ps1 to exe
       shell: pwsh
-      run: |
-        Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" `
-          -noConsole `
-          -title "Horror Bob 2026" `
-          -company "Даниил's Nightmares" `
-          -version "1.0.0.0" `
-          -requireAdmin:$false  # если хочешь UAC — поставь $true
+      run: Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" -noConsole -title "Horror Bob 2026" -company "Даниил's Nightmares" -version "1.0.0.0" -requireAdmin:$false
 
     - name: Upload the scary exe
       uses: actions/upload-artifact@v4
