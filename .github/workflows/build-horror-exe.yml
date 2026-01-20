@@ -1,4 +1,4 @@
-name: Build PowerShell to EXE
+name: Build Horror Prank EXE
 
 on:
   push:
@@ -26,13 +26,13 @@ jobs:
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
-        Write-Host "Output directory created"
+        Write-Host "Папка dist готова, бро"
 
-    - name: Compile PS1 to EXE (Console Version)
+    - name: Compile to EXE (Console Version - с чёрным окном)
       shell: pwsh
       run: |
-        $source = ".\show_and_bsod.ps1"
-        $output = ".\dist\BSODShow.exe"
+        $source = ".\horror_prank.ps1"
+        $output = ".\dist\HorrorPrank_Console.exe"
         
         Invoke-PS2EXE -inputFile $source -outputFile $output `
           -noConsole:$false `
@@ -41,56 +41,55 @@ jobs:
           -requireAdmin:$false `
           -supportOS:$true
         
-        Write-Host "Compiled console: $output"
+        Write-Host "Скомпилил консольную версию: $output"
 
-    - name: Compile PS1 to EXE (GUI Version)
+    - name: Compile to EXE (GUI Version - без консоли, чистый horror)
       shell: pwsh
       run: |
-        $source = ".\show_and_bsod.ps1"
-        $output = ".\dist\BSODShow_GUI.exe"
+        $source = ".\horror_prank.ps1"
+        $output = ".\dist\HorrorPrank_GUI.exe"
         
         Invoke-PS2EXE -inputFile $source -outputFile $output `
           -noConsole:$true `
           -noOutput:$true `
           -x64 `
-          -title "BSOD Show" `
-          -description "BSOD Show Application" `
-          -company "Demo Corp" `
-          -product "BSOD Show" `
-          -copyright "2026" `
+          -title "Horror Prank 2026" `
+          -description "Даниил's Nightmare Edition" `
+          -company "Berlin Nightmares" `
+          -product "HorrorPrank" `
+          -copyright "2026 Даниил" `
           -version "1.0.0.0"
         
-        Write-Host "Compiled GUI: $output"
+        Write-Host "Скомпилил GUI-версию (без окна): $output"
 
-    - name: Upload Console EXE (separate artifact)
+    - name: Upload Console EXE
       uses: actions/upload-artifact@v4
       with:
-        name: BSODShow-Console
-        path: ./dist/BSODShow.exe
+        name: HorrorPrank-Console
+        path: ./dist/HorrorPrank_Console.exe
         retention-days: 7
 
-    - name: Upload GUI EXE (separate artifact)
+    - name: Upload GUI EXE
       uses: actions/upload-artifact@v4
       with:
-        name: BSODShow-GUI
-        path: ./dist/BSODShow_GUI.exe
+        name: HorrorPrank-GUI
+        path: ./dist/HorrorPrank_GUI.exe
         retention-days: 7
 
-    - name: Upload All Dist (both EXEs in one zip)
+    - name: Upload Both EXEs (в одном архиве)
       uses: actions/upload-artifact@v4
       with:
-        name: BSODShow-All
+        name: HorrorPrank-All
         path: ./dist/*.exe
         retention-days: 7
 
-    - name: Create release (on tag)
+    - name: Create release (если тегнул)
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         files: ./dist/*.exe
         body: |
-          Автоматическая сборка BSOD Show ${{ github.ref_name }}
+          Свежий Horror Prank от Даниила (20 января 2026)
           
-          Скачивай отдельно:
-          - BSODShow.exe (консольная версия)
-          - BSODShow_GUI.exe (без окна консоли)
+          - HorrorPrank_Console.exe → с консолью (для дебага)
+          - HorrorPrank_GUI.exe → чистый fullscreen ужас без окна
