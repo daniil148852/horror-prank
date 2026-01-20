@@ -1,30 +1,108 @@
-name: Build Horror Prank EXE
+name: Build PowerShell to EXE
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Позволяет запускать вручную
 
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-
-    - name: Install PS2EXE module
-      shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
-        Install-Module -Name PS2EXE -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
-
-    - name: Compile ps1 to exe
-      shell: pwsh
-      run: Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" -noConsole -title "Horror Bob 2026" -company "Danii Nightmare Inc" -version "1.0.0.0" -requireAdmin:$false
-
-    - name: Upload the scary exe
-      uses: actions/upload-artifact@v4
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup PowerShell
+      uses: actions/setup-powershell@v2
       with:
-        name: horror-prank-exe
-        path: HorrorPrank.exe
+        target-architecture: 'x64'
+        
+    - name: Install required modules
+      shell: powershell
+      run: |
+        # Устанавливаем модуль PS2EXE
+        Install-Module -Name ps2exe -Force -Confirm:$false -Scope CurrentUser
+        
+        # Проверяем установку
+        Get-Module -ListAvailable ps2exe
+        
+    - name: Create output directory
+      shell: powershell
+      run: |
+        New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
+        Write-Host "Output directory created"
+        
+    - name: Compile PS1 to EXE (Console Version)
+      shell: powershell
+      run: |
+        # Компилируем в EXE с поддержкой консоли
+        $source = ".\show_and_bsod.ps1"
+        $output = ".\dist\BSODShow.exe"
+        
+        # Базовые параметры
+        Invoke-ps2exe -inputFile $source -outputFile $output `
+          -noConsole $false `
+          -noOutput $false `
+          -x86 $false `
+          -noError $false `
+          -requireAdmin $false `
+          -supportOS $true
+        
+        Write-Host "Compiled: $output"
+        
+    - name: Compile PS1 to EXE (GUI Version)
+      shell: powershell
+      run: |
+        # Компилируем в EXE без консоли (GUI приложение)
+        $source = ".\show_and_bsod.ps1"
+        $output = ".\dist\BSODShow_GUI.exe"
+        
+        # Параметры для GUI приложения
+        Invoke-ps2exe -inputFile $source -outputFile $output `
+          -noConsole $true `
+          -noOutput $true `
+          -x86 $false `
+          -iconFile "NONE" `
+          -title "BSOD Show" `
+          -description "BSOD Show Application" `
+          -company "Demo Corp" `
+          -product "BSOD Show" `
+          -copyright "2024" `
+          -version "1.0.0.0"
+        
+        Write-Host "Compiled: $output"
+        
+    - name: Create 7zip archive
+      shell: powershell
+      run: |
+        # Устанавливаем 7zip если нужно
+        if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
+          choco install 7zip -y
+        }
+        
+        # Архивируем файлы
+        7z a -t7z ".\dist\BSODShow_Package.7z" ".\dist\*.exe" -mx9
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: BSODShow-Build
+        path: |
+          ./dist/
+        retention-days: 7
+        
+    - name: Create release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./dist/*
+        body: |
+          Автоматическая сборка BSOD Show
+          
+          Содержит:
+          - BSODShow.exe - Консольная версия
+          - BSODShow_GUI.exe - GUI версия (без консоли)
+          - BSODShow_Package.7z - Архив с обоими версиями
