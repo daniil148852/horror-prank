@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Позволяет запускать вручную
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,96 +13,82 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
-    - name: Setup PowerShell
-      uses: actions/setup-powershell@v2
-      with:
-        target-architecture: 'x64'
-        
-    - name: Install required modules
-      shell: powershell
+    - name: Install PS2EXE module
+      shell: pwsh
       run: |
-        # Устанавливаем модуль PS2EXE
-        Install-Module -Name ps2exe -Force -Confirm:$false -Scope CurrentUser
-        
-        # Проверяем установку
-        Get-Module -ListAvailable ps2exe
-        
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+        Install-Module -Name ps2exe -Force -AllowClobber -Scope CurrentUser -ErrorAction Stop
+        Get-Module -ListAvailable ps2exe | Select Name, Version
+
     - name: Create output directory
-      shell: powershell
+      shell: pwsh
       run: |
         New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
         Write-Host "Output directory created"
-        
+
     - name: Compile PS1 to EXE (Console Version)
-      shell: powershell
+      shell: pwsh
       run: |
-        # Компилируем в EXE с поддержкой консоли
         $source = ".\show_and_bsod.ps1"
         $output = ".\dist\BSODShow.exe"
         
-        # Базовые параметры
-        Invoke-ps2exe -inputFile $source -outputFile $output `
-          -noConsole $false `
-          -noOutput $false `
-          -x86 $false `
-          -noError $false `
-          -requireAdmin $false `
-          -supportOS $true
+        Invoke-PS2EXE -inputFile $source -outputFile $output `
+          -noConsole:$false `
+          -noOutput:$false `
+          -x64 `
+          -requireAdmin:$false `
+          -supportOS:$true
         
-        Write-Host "Compiled: $output"
-        
+        Write-Host "Compiled console version: $output"
+
     - name: Compile PS1 to EXE (GUI Version)
-      shell: powershell
+      shell: pwsh
       run: |
-        # Компилируем в EXE без консоли (GUI приложение)
         $source = ".\show_and_bsod.ps1"
         $output = ".\dist\BSODShow_GUI.exe"
         
-        # Параметры для GUI приложения
-        Invoke-ps2exe -inputFile $source -outputFile $output `
-          -noConsole $true `
-          -noOutput $true `
-          -x86 $false `
-          -iconFile "NONE" `
+        Invoke-PS2EXE -inputFile $source -outputFile $output `
+          -noConsole:$true `
+          -noOutput:$true `
+          -x64 `
           -title "BSOD Show" `
           -description "BSOD Show Application" `
           -company "Demo Corp" `
           -product "BSOD Show" `
-          -copyright "2024" `
+          -copyright "2026" `
           -version "1.0.0.0"
         
-        Write-Host "Compiled: $output"
-        
+        Write-Host "Compiled GUI version: $output"
+
     - name: Create 7zip archive
-      shell: powershell
+      shell: pwsh
       run: |
-        # Устанавливаем 7zip если нужно
+        # 7z уже есть на runner'е, но на всякий
         if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
-          choco install 7zip -y
+          Write-Host "7z not found, skipping archive"
+        } else {
+          7z a -t7z ".\dist\BSODShow_Package.7z" ".\dist\*.exe" -mx9
+          Write-Host "Archive created"
         }
-        
-        # Архивируем файлы
-        7z a -t7z ".\dist\BSODShow_Package.7z" ".\dist\*.exe" -mx9
-        
+
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: BSODShow-Build
-        path: |
-          ./dist/
+        path: ./dist/
         retention-days: 7
-        
+
     - name: Create release (on tag)
       if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: ./dist/*
         body: |
-          Автоматическая сборка BSOD Show
+          Автоматическая сборка BSOD Show ${{ github.ref_name }}
           
           Содержит:
-          - BSODShow.exe - Консольная версия
-          - BSODShow_GUI.exe - GUI версия (без консоли)
-          - BSODShow_Package.7z - Архив с обоими версиями
+          - BSODShow.exe — Консольная версия
+          - BSODShow_GUI.exe — GUI версия (без окна консоли)
+          - BSODShow_Package.7z — Архив со всем
