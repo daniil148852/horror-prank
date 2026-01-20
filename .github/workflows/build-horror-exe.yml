@@ -41,7 +41,7 @@ jobs:
           -requireAdmin:$false `
           -supportOS:$true
         
-        Write-Host "Compiled console version: $output"
+        Write-Host "Compiled console: $output"
 
     - name: Compile PS1 to EXE (GUI Version)
       shell: pwsh
@@ -60,35 +60,37 @@ jobs:
           -copyright "2026" `
           -version "1.0.0.0"
         
-        Write-Host "Compiled GUI version: $output"
+        Write-Host "Compiled GUI: $output"
 
-    - name: Create 7zip archive
-      shell: pwsh
-      run: |
-        # 7z уже есть на runner'е, но на всякий
-        if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
-          Write-Host "7z not found, skipping archive"
-        } else {
-          7z a -t7z ".\dist\BSODShow_Package.7z" ".\dist\*.exe" -mx9
-          Write-Host "Archive created"
-        }
-
-    - name: Upload artifacts
+    - name: Upload Console EXE (separate artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: BSODShow-Build
-        path: ./dist/
+        name: BSODShow-Console
+        path: ./dist/BSODShow.exe
+        retention-days: 7
+
+    - name: Upload GUI EXE (separate artifact)
+      uses: actions/upload-artifact@v4
+      with:
+        name: BSODShow-GUI
+        path: ./dist/BSODShow_GUI.exe
+        retention-days: 7
+
+    - name: Upload All Dist (both EXEs in one zip)
+      uses: actions/upload-artifact@v4
+      with:
+        name: BSODShow-All
+        path: ./dist/*.exe
         retention-days: 7
 
     - name: Create release (on tag)
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: ./dist/*
+        files: ./dist/*.exe
         body: |
           Автоматическая сборка BSOD Show ${{ github.ref_name }}
           
-          Содержит:
-          - BSODShow.exe — Консольная версия
-          - BSODShow_GUI.exe — GUI версия (без окна консоли)
-          - BSODShow_Package.7z — Архив со всем
+          Скачивай отдельно:
+          - BSODShow.exe (консольная версия)
+          - BSODShow_GUI.exe (без окна консоли)
