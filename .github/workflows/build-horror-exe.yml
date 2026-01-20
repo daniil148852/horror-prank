@@ -2,94 +2,29 @@ name: Build Horror Prank EXE
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
-    - name: Checkout repository
+    - name: Checkout repo
       uses: actions/checkout@v4
-      
+
     - name: Install PS2EXE module
       shell: pwsh
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
-        Install-Module -Name ps2exe -Force -AllowClobber -Scope CurrentUser -ErrorAction Stop
-        Get-Module -ListAvailable ps2exe | Select Name, Version
+        Install-Module -Name PS2EXE -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
 
-    - name: Create output directory
+    - name: Compile ps1 to exe
       shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
-        Write-Host "Папка dist готова, бро"
+      run: Invoke-PS2EXE -inputFile "horror_prank.ps1" -outputFile "HorrorPrank.exe" -noConsole -title "Horror Bob 2026" -company "Danii Nightmare Inc" -version "1.0.0.0" -requireAdmin:$false
 
-    - name: Compile to EXE (Console Version - с чёрным окном)
-      shell: pwsh
-      run: |
-        $source = ".\horror_prank.ps1"
-        $output = ".\dist\HorrorPrank_Console.exe"
-        
-        Invoke-PS2EXE -inputFile $source -outputFile $output `
-          -noConsole:$false `
-          -noOutput:$false `
-          -x64 `
-          -requireAdmin:$false `
-          -supportOS:$true
-        
-        Write-Host "Скомпилил консольную версию: $output"
-
-    - name: Compile to EXE (GUI Version - без консоли, чистый horror)
-      shell: pwsh
-      run: |
-        $source = ".\horror_prank.ps1"
-        $output = ".\dist\HorrorPrank_GUI.exe"
-        
-        Invoke-PS2EXE -inputFile $source -outputFile $output `
-          -noConsole:$true `
-          -noOutput:$true `
-          -x64 `
-          -title "Horror Prank 2026" `
-          -description "Даниил's Nightmare Edition" `
-          -company "Berlin Nightmares" `
-          -product "HorrorPrank" `
-          -copyright "2026 Даниил" `
-          -version "1.0.0.0"
-        
-        Write-Host "Скомпилил GUI-версию (без окна): $output"
-
-    - name: Upload Console EXE
+    - name: Upload the scary exe
       uses: actions/upload-artifact@v4
       with:
-        name: HorrorPrank-Console
-        path: ./dist/HorrorPrank_Console.exe
-        retention-days: 7
-
-    - name: Upload GUI EXE
-      uses: actions/upload-artifact@v4
-      with:
-        name: HorrorPrank-GUI
-        path: ./dist/HorrorPrank_GUI.exe
-        retention-days: 7
-
-    - name: Upload Both EXEs (в одном архиве)
-      uses: actions/upload-artifact@v4
-      with:
-        name: HorrorPrank-All
-        path: ./dist/*.exe
-        retention-days: 7
-
-    - name: Create release (если тегнул)
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2
-      with:
-        files: ./dist/*.exe
-        body: |
-          Свежий Horror Prank от Даниила (20 января 2026)
-          
-          - HorrorPrank_Console.exe → с консолью (для дебага)
-          - HorrorPrank_GUI.exe → чистый fullscreen ужас без окна
+        name: horror-prank-exe
+        path: HorrorPrank.exe
